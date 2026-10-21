@@ -1,0 +1,61 @@
+# Configurações de Roteamento Externo
+# Configurações da API Spring Boot
+# Configuramos aqui vários valores de especificação para o Cluster
+ingress:
+  host: "api.pede-rango.local"
+  additionalHosts:
+    - "api.192.168.3.27.nip.io"
+api:
+  image: "pede-rango-api"
+  tag: "v1"
+  replicas: 1
+  port: 8100
+  # Sondas para garantir o ciclo de vida e tempo de boot da API
+  probes:
+    startup:
+      path: /actuator/health/liveness
+      initialDelaySeconds: 15
+      periodSeconds: 5
+      failureThreshold: 20 # 15s + (20 * 5s) = até 115s para a JVM inicializar
+    liveness:
+      path: /actuator/health/liveness
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /actuator/health/readiness
+      initialDelaySeconds: 10
+      periodSeconds: 10
+  # Governança de Recursos (CPU e Memória)
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  # Auto-escalabilidade Horizontal de Pods (HPA)
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+# Configurações do Banco de Dados PostgreSQL
+database:
+  image: "postgres"
+  tag: "16-alpine"
+  port: 5432
+  storage: "2Gi"
+
+  # Limites e garantias de recursos para o Postgres
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+  # Credenciais e Nomes (que virarão Secrets)
+  dbName: "pede_rango_db"
+  user: "pede_rango_user"
+  password: "pede_rango_pass"

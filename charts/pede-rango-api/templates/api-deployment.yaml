@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pede-rango-api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      app: pede-rango-api
+  template:
+    metadata:
+      labels:
+        app: pede-rango-api
+    spec:
+      # Aqui temos um initContainers configurado para validar exclusivamente que a inicialização do
+      # Banco de Dados ocorreu corretamente, para aí sim lançar a execução dos Pods da API
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z -w 2 pede-rango-db {{ .Values.database.port }}; do echo "Aguardando banco de dados pede-rango-db:{{ .Values.database.port }}..."; sleep 2; done; echo "Banco de dados pronto!";']
+      # Container da API
+      containers:
+      - name: api
+        image: "{{ .Values.api.image }}:{{ .Values.api.tag }}"
+        imagePullPolicy: IfNotPresent # Fundamental para o Kind usar a imagem local que carregamos
+        ports:
+        - containerPort: {{ .Values.api.port }}
+       # Aqui garantimos a limitação de consumo de recursos pelo container
+        resources:
+          requests:
+            cpu: {{ .Values.api.resources.requests.cpu | quote }}
+            memory: {{ .Values.api.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.api.resources.limits.cpu | quote }}
+            memory: {{ .Values.api.resources.limits.memory | quote }}
+        # Aqui temos as sondas configuradas para inicialização segura da API
+        startupProbe:
+          httpGet:
+            path: {{ .Values.api.probes.startup.path }}
+            port: {{ .Values.api.port }}
+          initialDelaySeconds: {{ .Values.api.probes.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.api.probes.startup.periodSeconds }}
+          failureThreshold: {{ .Values.api.probes.startup.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.api.probes.readiness.path }}
+            port: {{ .Values.api.port }}
+          initialDelaySeconds: {{ .Values.api.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.api.probes.readiness.periodSeconds }}
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.api.probes.liveness.path }}
+            port: {{ .Values.api.port }}
+          initialDelaySeconds: {{ .Values.api.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.api.probes.liveness.periodSeconds }}
+          timeoutSeconds: 3
+          failureThreshold: 3
+        env:
+        - name: SPRING_DATASOURCE_URL
+          # Conectando no Service do banco de dados usando o DNS interno do cluster
+          value: "jdbc:postgresql://pede-rango-db:5432/{{ .Values.database.dbName }}"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: pede-rango-secrets
+              key: db-user
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pede-rango-secrets
+              key: db-password

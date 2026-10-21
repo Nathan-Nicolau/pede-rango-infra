@@ -1,0 +1,26 @@
+ingress:
+  host: "app.pede-rango.local"
+  additionalHosts:
+    - "app.192.168.3.27.nip.io"
+
+web:
+  image: "pede-rango-web"
+  tag: "v3" # Versao atualizada com URL correta da API
+  replicas: 1
+  port: 80
+  resources:
+    requests:
+      cpu: "20m"
+      memory: "32Mi"
+    limits:
+      cpu: "100m"
+      memory: "64Mi"
+  probes:
+    liveness:
+      path: /
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readiness:
+      path: /
+      initialDelaySeconds: 2
+      periodSeconds: 5

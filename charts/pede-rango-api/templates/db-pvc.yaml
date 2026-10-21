@@ -1,0 +1,11 @@
+# Esse é o arquivo de configuração do PVC do Banco de Dados
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pede-rango-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.database.storage }}

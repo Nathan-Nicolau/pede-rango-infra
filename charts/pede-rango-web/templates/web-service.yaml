@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pede-rango-web-service
+spec:
+  selector:
+    app: pede-rango-web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: {{ .Values.web.port }}

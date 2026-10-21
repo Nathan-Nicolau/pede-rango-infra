@@ -1,0 +1,72 @@
+# Esse é o arquivo de configuração StatefulSet do Banco de Dados
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pede-rango-db
+spec:
+  serviceName: "pede-rango-db"
+  replicas: 1 # Na lógica desse projeto, manter somente 1 réplica do DB é suficiente
+  selector:
+    matchLabels:
+      app: pede-rango-db
+  template:
+    metadata:
+      labels:
+        app: pede-rango-db
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.database.image }}:{{ .Values.database.tag }}"
+        ports:
+        - containerPort: {{ .Values.database.port }}
+        resources:
+          requests:
+            cpu: {{ .Values.database.resources.requests.cpu | quote }}
+            memory: {{ .Values.database.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.database.resources.limits.cpu | quote }}
+            memory: {{ .Values.database.resources.limits.memory | quote }}
+        # Conseguimos definir Probes também para o Banco de Dados, utilizando do recurso nativo "pg_isready"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U {{ .Values.database.user }} -d {{ .Values.database.dbName }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U {{ .Values.database.user }} -d {{ .Values.database.dbName }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 3
+          failureThreshold: 3
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: pede-rango-secrets
+              key: db-name
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: pede-rango-secrets
+              key: db-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pede-rango-secrets
+              key: db-password
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: db-data
+        persistentVolumeClaim:
+          claimName: pede-rango-db-pvc
