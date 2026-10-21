@@ -1,0 +1,50 @@
+name: pede-rango
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pede_rango_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pede_rango_db
+      POSTGRES_USER: pede_rango_user
+      POSTGRES_PASSWORD: pede_rango_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pede_rango_user -d pede_rango_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../pede-rango-api
+      dockerfile: Dockerfile
+    container_name: pede_rango_api
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/pede_rango_db
+      SPRING_DATASOURCE_USERNAME: pede_rango_user
+      SPRING_DATASOURCE_PASSWORD: pede_rango_pass
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../pede-rango-web
+      dockerfile: Dockerfile
+    container_name: pede_rango_web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
