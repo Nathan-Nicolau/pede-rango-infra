@@ -3,7 +3,7 @@
 Este repositório centraliza a **Infraestrutura como Código (IaC)** e os guias operacionais do ecossistema **Pede-Rango**, permitindo que desenvolvedores e avaliadores técnicos executem o sistema em **3 modos distintos**, de acordo com a preferência:
 
 1. **🟢 Modo 1 (Direto na IDE / Terminal — Sem Kubernetes)**: Apenas o container do PostgreSQL rodando via Docker + Backend (IDE ou Maven) e Frontend (Vite) rodando separadamente.
-2. **🔵 Modo 2 (Full Docker Compose — Sem Kubernetes)**: Banco de Dados + Backend API + Frontend Web rodando inteiramente em containers Docker.
+2. **🔵 Modo 2 RECOMENDADO (Full Docker Compose — Sem Kubernetes)**: Banco de Dados + Backend API + Frontend Web rodando inteiramente em containers Docker.
 3. **🟣 Modo 3 (Cluster Kubernetes Local — Kind + Helm)**: Topologia completa Cloud-Native com `StatefulSet`, `PVC`, `HPA`, `Probes` e roteamento via `Ingress NGINX`.
 
 | Modo de Execução | Onde roda o Banco | Onde roda a API | Onde roda o Web | URL do Web | URL da API |
