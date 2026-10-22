@@ -2,9 +2,15 @@
 
 Este repositório centraliza a **Infraestrutura como Código (IaC)** e os guias operacionais do ecossistema **Pede-Rango**, permitindo que desenvolvedores e avaliadores técnicos executem o sistema em **3 modos distintos**, de acordo com a preferência:
 
-1. **🟢 Modo 1 (Rápido / Sem Kubernetes)**: Apenas o container do PostgreSQL rodando via Docker + Backend e Frontend rodando separadamente no terminal/IDE.
-2. **🔵 Modo 2 (Full Docker Compose / Sem Kubernetes)**: Banco de Dados + Backend API + Frontend Web rodando inteiramente em containers Docker.
+1. **🟢 Modo 1 (Direto na IDE / Terminal — Sem Kubernetes)**: Apenas o container do PostgreSQL rodando via Docker + Backend (IDE ou Maven) e Frontend (Vite) rodando separadamente.
+2. **🔵 Modo 2 (Full Docker Compose — Sem Kubernetes)**: Banco de Dados + Backend API + Frontend Web rodando inteiramente em containers Docker.
 3. **🟣 Modo 3 (Cluster Kubernetes Local — Kind + Helm)**: Topologia completa Cloud-Native com `StatefulSet`, `PVC`, `HPA`, `Probes` e roteamento via `Ingress NGINX`.
+
+| Modo de Execução | Onde roda o Banco | Onde roda a API | Onde roda o Web | URL do Web | URL da API |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **🟢 Modo 1 (IDE / Dev)** | Container (`:5433`) | IDE / Maven (`:8100`) | Vite Dev (`:5173`) | `http://localhost:5173` | `http://localhost:8100` |
+| **🔵 Modo 2 (Docker Compose)** | Container (`:5433`) | Container (`:8100`) | Container (`:3000`) | `http://localhost:3000` | `http://localhost:8100` |
+| **🟣 Modo 3 (Kubernetes Kind)** | Pod `StatefulSet` | Pod `Deployment` | Pod `Deployment` | `http://app.pede-rango.local` | `http://api.pede-rango.local` |
 
 ---
 
@@ -46,8 +52,8 @@ docker compose up -d db
 ```
 *(O PostgreSQL ficará disponível em `localhost:5433` com banco `pede_rango_db`, usuário `pede_rango_user` e senha `pede_rango_pass`).*
 
-### 2. Iniciar a API Backend (Spring Boot)
-Em um terminal, acesse a pasta da API e execute:
+### 2. Iniciar a API Backend (Spring Boot — via IDE ou Terminal)
+Você pode dar **Run / Debug** diretamente pela sua IDE (IntelliJ / VS Code / Eclipse) na classe `PedeRangoApiApplication`, ou executar pelo terminal:
 ```bash
 cd ../pede-rango-api
 ./mvnw spring-boot:run
@@ -69,15 +75,10 @@ npm run dev
 
 ## 🔵 Modo 2: Tudo via Docker Compose (Sem Kubernetes)
 
-Caso deseje subir **Banco + API + Web** inteiramente em containers Docker com um único fluxo:
+Caso deseje subir **Banco + API + Web** inteiramente em containers Docker (os `Dockerfiles` de ambos os projetos são *multi-stage* e já compilam o código automaticamente dentro do container):
 
 ```bash
-# 1. Empacotar o JAR da API
-cd pede-rango-api
-./mvnw clean package -DskipTests
-
-# 2. Subir todos os containers (DB + API + Web) pelo pede-rango-infra
-cd ../pede-rango-infra
+cd pede-rango-infra
 docker compose up -d --build
 ```
 
